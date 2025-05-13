@@ -81,12 +81,22 @@
         .info-value { /* Added for better word breaking */
             word-break: break-all;
         }
+        .help-icon {
+            color: #9ca3af; /* gray-400 */
+            margin-left: 0.25rem; /* ml-1 */
+            cursor: pointer;
+            font-size: 0.875rem; /* text-sm to be a bit smaller */
+        }
+        .help-icon:hover {
+            color: #3b82f6; /* blue-500 */
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
     <div class="container mx-auto p-4">
-        <header class="mb-6 flex justify-between items-center">
-            <h1 class="text-4xl font-bold text-center text-blue-600 flex-grow">Link Keeper</h1>
+        <header class="mb-6 text-center">
+            <h1 class="text-4xl font-bold text-blue-600">Link Keeper</h1>
+            <p class="text-lg text-gray-600 mt-2">もう見失わない！ワークスペースで管理する次世代型ブックマーク</p>
         </header>
 
         <div class="mb-6 p-4 bg-white shadow-md rounded-lg">
@@ -94,38 +104,52 @@
             <div class="flex flex-wrap gap-2 mb-4" id="tabsContainer">
                 <button id="allUrlsTabButton" class="tab-button active bg-blue-500 text-white px-4 py-2 rounded-md shadow hover:bg-blue-600">ダッシュボード</button>
             </div>
-            <div id="addTabSection" class="flex gap-2">
+            <div id="noWorkspacesGuide" class="text-center text-gray-600 p-4 my-4 bg-yellow-100 border border-yellow-300 rounded-md hidden">
+                散らばるリンクをまとめましょう。最初のワークスペース名は何にしますか？
+            </div>
+            <div id="addTabSection" class="flex items-center gap-2">
                 <input type="text" id="newTabNameInput" placeholder="新しいワークスペース名" class="flex-grow p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
                 <button id="addTabButton" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md shadow">
                     <i class="fas fa-plus mr-1"></i> ワークスペース追加
                 </button>
+                <i class="fas fa-question-circle help-icon" data-help-id="addWorkspace"></i>
             </div>
         </div>
 
-        <div class="mb-4 flex flex-col md:flex-row justify-between items-center gap-3">
+        <div class="mb-4 flex flex-col gap-2">
             <h2 class="text-2xl font-semibold text-gray-700" id="currentTabTitle">■ ダッシュボード</h2>
-            <div class="flex gap-2 flex-wrap">
-                <button id="openAddUrlModalButton" class="bg-cyan-500 hover:bg-cyan-600 text-white px-4 py-2 rounded-md shadow text-sm">
-                    <i class="fas fa-plus-circle mr-1"></i> 新規登録
-                </button>
-                <button id="exportButton" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-md shadow text-sm">
-                    <i class="fas fa-file-export mr-1"></i> エクスポート (CSV)
-                </button>
-                <label class="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded-md shadow cursor-pointer text-sm">
-                    <i class="fas fa-file-import mr-1"></i> インポート (CSV)
-                    <input type="file" id="importFile" class="hidden" accept=".csv">
-                </label>
-                <label id="googleBookmarkImportLabel" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-md shadow cursor-pointer text-sm">
-                    <i class="fab fa-google mr-1"></i> ブックマークHTML変換 (Link Keeper用CSV)
-                    <input type="file" id="googleBookmarkImportFile" class="hidden" accept=".html">
-                </label>
+            <div class="flex gap-3 flex-wrap items-center"> 
+                <div class="flex items-center" id="newUrlRegistrationGroup"> <button id="openAddUrlModalButton" class="bg-cyan-500 hover:bg-cyan-600 text-white px-4 py-2 rounded-md shadow text-sm">
+                        <i class="fas fa-plus-circle mr-1"></i> 新規登録
+                    </button>
+                    <i class="fas fa-question-circle help-icon" data-help-id="newUrlRegistration"></i>
                 </div>
+                <div class="flex items-center">
+                    <button id="exportButton" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-md shadow text-sm">
+                        <i class="fas fa-file-export mr-1"></i> エクスポート (CSV)
+                    </button>
+                    <i class="fas fa-question-circle help-icon" data-help-id="exportCsv"></i>
+                </div>
+                <div class="flex items-center">
+                    <label id="importCsvLabel" class="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded-md shadow cursor-pointer text-sm flex items-center">
+                        <i class="fas fa-file-import mr-1"></i> インポート (CSV)
+                        <input type="file" id="importFile" class="hidden" accept=".csv">
+                    </label>
+                    <i class="fas fa-question-circle help-icon" data-help-id="importCsv"></i>
+                </div>
+                <div class="flex items-center" id="googleBookmarkImportGroup"> <label id="googleBookmarkImportLabel" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-md shadow cursor-pointer text-sm flex items-center">
+                        <i class="fab fa-google mr-1"></i> ブックマークHTML変換 (Link Keeper用CSV)
+                        <input type="file" id="googleBookmarkImportFile" class="hidden" accept=".html">
+                    </label>
+                    <i class="fas fa-question-circle help-icon" data-help-id="googleHtmlImport"></i>
+                </div>
+            </div>
         </div>
-
         <div class="mb-6 p-4 bg-white shadow-md rounded-lg">
             <div class="flex flex-col md:flex-row justify-between items-center gap-4">
                 <div class="flex-grow w-full md:w-auto flex items-center gap-2">
-                    <input type="text" id="searchInput" placeholder="" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"> <button id="clearSearchButton" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-2 rounded-md shadow text-sm" title="検索クリア">
+                    <input type="text" id="searchInput" placeholder="" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                    <button id="clearSearchButton" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-2 rounded-md shadow text-sm">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
@@ -196,7 +220,7 @@
         </div>
     </div>
     
-    <div class="version-info text-xs text-gray-500 text-center mt-8">Ver1.0.8</div>
+    <div class="version-info text-xs text-gray-500 text-center mt-8">Ver1.0.15</div>
 
     <script>
         // DOM Elements
@@ -235,16 +259,28 @@
         const confirmationModal = document.getElementById('confirmationModal');
         const confirmModalTitle = document.getElementById('confirmModalTitle');
         const confirmModalMessage = document.getElementById('confirmModalMessage');
+        const noWorkspacesGuide = document.getElementById('noWorkspacesGuide'); 
+        const newUrlRegistrationGroup = document.getElementById('newUrlRegistrationGroup'); 
+        const googleBookmarkImportGroup = document.getElementById('googleBookmarkImportGroup'); 
+
 
         let data = { tabs: [], urls: [] };
         let currentView = 'all'; 
         let sortableUrlList = null;
         let showOnlyFavorites = false; 
         
+        const helpTexts = {
+            addWorkspace: { title: "ワークスペース追加", text: "新しい情報整理の箱（ワークスペース）を作ります。名前を入力して追加してください。" },
+            newUrlRegistration: { title: "新規登録", text: "選択中のワークスペースに新しいURLを登録します。URLや名前などを入力する画面が開きます。" },
+            exportCsv: { title: "エクスポート (CSV)", text: "表示中のURL情報をCSVファイルで出力します。データのバックアップや共有に便利です。" },
+            importCsv: { title: "インポート (CSV)", text: "CSVファイルを読み込みデータを一括登録します。ダッシュボードでは全体更新、ワークスペースでは内容置換です。" },
+            googleHtmlImport: { title: "ブックマークHTML変換", text: "ブラウザのブックマークHTMLを読み込み、Link Keeper用CSVに変換して出力します。" }
+        };
+        
         const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
-        const saveToLocalStorage = () => localStorage.setItem('urlManagerDataV14', JSON.stringify(data)); // MODIFIED: Version bump
+        const saveToLocalStorage = () => localStorage.setItem('urlManagerDataV21', JSON.stringify(data));
         const loadFromLocalStorage = () => {
-            const storedData = localStorage.getItem('urlManagerDataV14'); // MODIFIED: Version bump
+            const storedData = localStorage.getItem('urlManagerDataV21');
             if (storedData) {
                 try {
                     const parsedData = JSON.parse(storedData);
@@ -259,11 +295,7 @@
                                 .forEach(url => {
                                     if (typeof url.order !== 'number') url.order = orderCounter;
                                     orderCounter = Math.max(orderCounter, url.order) + 1;
-                                    // Ensure tags are always an array, even if loaded from older data
                                     if (typeof url.tags === 'string') {
-                                        // Assuming older data might have used comma or semicolon.
-                                        // For consistency, let's prefer splitting by comma now for internal representation.
-                                        // This part might need adjustment if old data strictly used semicolon for multiple tags.
                                         url.tags = url.tags.split(/[,;]/).map(t => t.trim()).filter(t => t);
                                     } else if (!Array.isArray(url.tags)) {
                                         url.tags = [];
@@ -317,7 +349,7 @@
         };
 
         const openInfoModal = (title, message) => {
-            confirmModalTitle.textContent = title;
+            confirmModalTitle.textContent = title; 
             confirmModalMessage.textContent = message;
             confirmModalButtonContainer.innerHTML = '';
 
@@ -345,7 +377,7 @@
                     modalUrlNameInput.value = urlToEdit.name;
                     modalUrlInput.value = urlToEdit.url;
                     modalUrlDescriptionInput.value = urlToEdit.description;
-                    modalUrlTagsInput.value = (urlToEdit.tags || []).join(', '); // Tags are joined by comma for display in modal
+                    modalUrlTagsInput.value = (urlToEdit.tags || []).join(', '); 
                     modalIsFavoriteInput.checked = urlToEdit.isFavorite; 
                     modalEditingUrlIdInput.value = urlToEdit.id;
                     modalAddOrUpdateUrlButton.innerHTML = '<i class="fas fa-save mr-1"></i> 更新';
@@ -372,7 +404,7 @@
             const urlValue = modalUrlInput.value.trim();
             const description = modalUrlDescriptionInput.value.trim();
             const tagsString = modalUrlTagsInput.value.trim(); 
-            const tags = tagsString ? tagsString.split(',').map(tag => tag.trim()).filter(tag => tag) : []; // Modal input uses comma
+            const tags = tagsString ? tagsString.split(',').map(tag => tag.trim()).filter(tag => tag) : []; 
             const isFavorite = modalIsFavoriteInput.checked; 
             const editingId = modalEditingUrlIdInput.value;
 
@@ -495,23 +527,29 @@
             }
             urlsToDisplay.sort((a, b) => (a.order || 0) - (b.order || 0));
             
-            emptyMessage.classList.toggle('hidden', urlsToDisplay.length > 0); 
-
-            if (urlsToDisplay.length === 0) {
-                let message = "表示するURLはありません。"; 
-                if (searchTerm && showOnlyFavorites) {
-                    message = "検索結果に一致するお気に入りURLはありません。";
-                } else if (searchTerm) {
-                    message = "検索結果に一致するURLはありません。";
-                } else if (showOnlyFavorites) {
-                     message = currentView === 'all' ? "お気に入りのURLはまだありません。" : `「${data.tabs.find(t=>t.id === currentView)?.name || 'このワークスペース'}」にお気に入りのURLはありません。`; 
-                } else if (currentView === 'all' && data.urls.length === 0) { 
-                    message = "まだURLが登録されていません。";
-                } else if (currentView !== 'all' && !data.urls.some(url => url.tabId === currentView)) { 
-                     const currentTabObj = data.tabs.find(t => t.id === currentView);
-                     message = `「${currentTabObj?.name || 'このワークスペース'}」にURLを登録しましょう。`; 
+            const noWorkspacesGuideEl = document.getElementById('noWorkspacesGuide');
+            if (data.tabs.length === 0 && currentView === 'all') {
+                 if (noWorkspacesGuideEl) noWorkspacesGuideEl.classList.remove('hidden');
+                 emptyMessage.classList.add('hidden'); 
+            } else {
+                if (noWorkspacesGuideEl) noWorkspacesGuideEl.classList.add('hidden');
+                emptyMessage.classList.toggle('hidden', urlsToDisplay.length > 0); 
+                if (urlsToDisplay.length === 0) {
+                    let message = "表示するURLはありません。"; 
+                    if (searchTerm && showOnlyFavorites) {
+                        message = "検索結果に一致するお気に入りURLはありません。";
+                    } else if (searchTerm) {
+                        message = "検索結果に一致するURLはありません。";
+                    } else if (showOnlyFavorites) {
+                         message = currentView === 'all' ? "お気に入りのURLはまだありません。" : `「${data.tabs.find(t=>t.id === currentView)?.name || 'このワークスペース'}」にお気に入りのURLはありません。`; 
+                    } else if (currentView === 'all' && data.urls.length === 0) { 
+                        message = "まだURLが登録されていません。";
+                    } else if (currentView !== 'all' && !data.urls.some(url => url.tabId === currentView)) { 
+                         const currentTabObj = data.tabs.find(t => t.id === currentView);
+                         message = `「${currentTabObj?.name || 'このワークスペース'}」にURLを登録しましょう。`; 
+                    }
+                    emptyMessageText.textContent = message;
                 }
-                emptyMessageText.textContent = message;
             }
 
             urlsToDisplay.forEach(urlData => {
@@ -574,24 +612,29 @@
                 contentWrapper.appendChild(infoDiv);
                 const actionsDiv = document.createElement('div');
                 actionsDiv.className = 'flex items-center gap-2 mt-2 ml-auto flex-shrink-0 self-end'; 
+                
                 const favoriteBtn = document.createElement('button');
                 favoriteBtn.className = `favorite-btn p-2 rounded-full hover:bg-gray-200 transition-colors ${urlData.isFavorite ? 'favorited' : ''}`;
                 favoriteBtn.innerHTML = `<i class="fas fa-star ${urlData.isFavorite ? 'text-yellow-400' : 'text-gray-400'}"></i>`;
                 favoriteBtn.title = urlData.isFavorite ? 'お気に入り解除' : 'お気に入り登録';
                 favoriteBtn.onclick = () => toggleFavorite(urlData.id);
+                
                 const editBtn = document.createElement('button');
                 editBtn.className = 'p-2 rounded-full hover:bg-gray-200 transition-colors text-blue-500 hover:text-blue-700';
                 editBtn.innerHTML = '<i class="fas fa-edit"></i>';
                 editBtn.title = '編集';
                 editBtn.onclick = () => openUrlModal('edit', urlData.id);
+
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = 'p-2 rounded-full hover:bg-gray-200 transition-colors text-red-500 hover:text-red-700';
                 deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
                 deleteBtn.title = '削除';
                 deleteBtn.onclick = () => { openStandardConfirmationModal('URL削除の確認', `URL「${urlData.name}」を削除しますか？`, () => deleteUrl(urlData.id)); };
-                actionsDiv.appendChild(editBtn);
+                
+                actionsDiv.appendChild(editBtn); 
                 actionsDiv.appendChild(favoriteBtn);
                 actionsDiv.appendChild(deleteBtn);
+
                 urlItem.appendChild(contentWrapper);
                 urlItem.appendChild(actionsDiv);
                 urlListContainer.appendChild(urlItem);
@@ -711,7 +754,7 @@
                 urlsToExport = urlsToExport.filter(url =>
                     url.name.toLowerCase().includes(searchTerm) ||
                     (url.description && url.description.toLowerCase().includes(searchTerm)) ||
-                    (url.tags && url.tags.some(tag => tag.toLowerCase().includes(searchTerm))) || // Tags are searched as an array
+                    (url.tags && url.tags.some(tag => tag.toLowerCase().includes(searchTerm))) || 
                     (url.tabName && url.tabName.toLowerCase().includes(searchTerm) && currentView === 'all')
                 );
             }
@@ -722,7 +765,7 @@
                 const csvHeader = ["Tab Name", "URL Name", "URL", "Description", "Tags", "Is Favorite", "Order"]; 
                 const csvRows = urlsToExport.map(url => { 
                     const tabName = url.tabName || (data.tabs.find(t => t.id === url.tabId)?.name || '未分類'); 
-                    const tagsString = (url.tags || []).join(','); // MODIFIED: Join tags with comma for CSV export
+                    const tagsString = (url.tags || []).join(','); 
                     const isFavoriteString = url.isFavorite ? 'TRUE' : 'FALSE';
                     return [ escapeCsvCell(tabName), escapeCsvCell(url.name), escapeCsvCell(url.url), escapeCsvCell(url.description), escapeCsvCell(tagsString), escapeCsvCell(isFavoriteString), escapeCsvCell(url.order) ].join(',');
                 });
@@ -787,7 +830,7 @@
                                 } else { tabId = generateId(); tabNameIdMap[csvTabName] = tabId; newTabs.push({ id: tabId, name: csvTabName }); }
                                 const description = headerMap["Description"] !== undefined ? values[headerMap["Description"]]?.trim() || '' : '';
                                 const tagsString = headerMap["Tags"] !== undefined ? values[headerMap["Tags"]]?.trim() || '' : '';
-                                const tags = tagsString ? tagsString.split(',').map(t => t.trim()).filter(t => t) : []; // MODIFIED: Split tags by comma for CSV import
+                                const tags = tagsString ? tagsString.split(',').map(t => t.trim()).filter(t => t) : []; 
                                 const isFavoriteString = headerMap["Is Favorite"] !== undefined ? values[headerMap["Is Favorite"]]?.trim().toUpperCase() || 'FALSE' : 'FALSE';
                                 const isFavorite = isFavoriteString === 'TRUE';
                                 const order = headerMap["Order"] !== undefined ? parseInt(values[headerMap["Order"]], 10) : NaN;
@@ -818,7 +861,7 @@
                                     if (!urlName || !urlValue) { console.warn(`CSVの ${lineIndex + 2}行目はURL名またはURLが空です。スキップします。: ${line}`); return; }
                                     const description = headerMap["Description"] !== undefined ? values[headerMap["Description"]]?.trim() || '' : '';
                                     const tagsString = headerMap["Tags"] !== undefined ? values[headerMap["Tags"]]?.trim() || '' : '';
-                                    const tags = tagsString ? tagsString.split(',').map(t => t.trim()).filter(t => t) : []; // MODIFIED: Split tags by comma for CSV import
+                                    const tags = tagsString ? tagsString.split(',').map(t => t.trim()).filter(t => t) : []; 
                                     const isFavoriteString = headerMap["Is Favorite"] !== undefined ? values[headerMap["Is Favorite"]]?.trim().toUpperCase() || 'FALSE' : 'FALSE';
                                     const isFavorite = isFavoriteString === 'TRUE';
                                     const csvOrder = headerMap["Order"] !== undefined ? parseInt(values[headerMap["Order"]], 10) : NaN;
@@ -877,7 +920,7 @@
                                 urlName: name,
                                 url: url,
                                 description: "",
-                                tags: "", // Tags will be empty string for CSV, as per spec
+                                tags: "", 
                                 isFavorite: "FALSE",
                                 order: orderCounter++
                             });
@@ -959,14 +1002,23 @@
         const render = () => {
             document.querySelectorAll('.tab-button:not(#allUrlsTabButton)').forEach(btn => btn.remove()); 
             const dashboardButton = document.getElementById('allUrlsTabButton');
+            const newUrlRegistrationGroupEl = document.getElementById('newUrlRegistrationGroup');
+            const googleBookmarkImportGroupEl = document.getElementById('googleBookmarkImportGroup');
+
+
             if (currentView === 'all') {
                 dashboardButton.classList.add('active', 'bg-blue-500', 'text-white');
                 dashboardButton.classList.remove('bg-gray-200', 'text-gray-700');
                 searchInput.placeholder = '名称,詳細,タグ,ワークスペースで検索';
+                if (newUrlRegistrationGroupEl) newUrlRegistrationGroupEl.style.display = 'none';
+                if (googleBookmarkImportGroupEl) googleBookmarkImportGroupEl.style.display = 'flex';
+
             } else {
                 dashboardButton.classList.remove('active', 'bg-blue-500', 'text-white');
                 dashboardButton.classList.add('bg-gray-200', 'text-gray-700');
                 searchInput.placeholder = '名称,詳細,タグで検索';
+                if (newUrlRegistrationGroupEl) newUrlRegistrationGroupEl.style.display = 'flex';
+                if (googleBookmarkImportGroupEl) googleBookmarkImportGroupEl.style.display = 'none';
             }
             if (!dashboardButton.hasAttribute('data-listener-attached')) { 
                 dashboardButton.addEventListener('click', () => { currentView = 'all'; render(); });
@@ -994,22 +1046,43 @@
             let totalUrlCount = data.urls.length;
             let currentWorkspaceUrlCount = 0;
 
-            const googleImportBtnLabel = document.getElementById('googleBookmarkImportLabel');
+            const noWorkspacesGuideEl = document.getElementById('noWorkspacesGuide');
+
             if (currentView === 'all') { 
                 addTabSection.style.display = 'flex'; 
                 currentTabTitle.textContent = `■ ダッシュボード (全${totalUrlCount}件)`;
-                openAddUrlModalButton.style.display = 'none'; 
-                if (googleImportBtnLabel) googleImportBtnLabel.style.display = 'inline-flex';
+                if (data.tabs.length === 0) {
+                    if (noWorkspacesGuideEl) noWorkspacesGuideEl.classList.remove('hidden');
+                    if (emptyMessage) emptyMessage.classList.add('hidden'); 
+                } else {
+                    if (noWorkspacesGuideEl) noWorkspacesGuideEl.classList.add('hidden');
+                }
             } else { 
                 addTabSection.style.display = 'none'; 
                 const currentTabObj = data.tabs.find(tab => tab.id === currentView); 
                 currentWorkspaceUrlCount = data.urls.filter(url => url.tabId === currentView).length;
                 currentTabTitle.textContent = currentTabObj ? `■ ${currentTabObj.name} (${currentWorkspaceUrlCount}件)` : '■ ワークスペースが見つかりません'; 
-                openAddUrlModalButton.style.display = 'inline-block'; 
-                if (googleImportBtnLabel) googleImportBtnLabel.style.display = 'none';
+                if (noWorkspacesGuideEl) noWorkspacesGuideEl.classList.add('hidden');
             }
             renderUrls();
         };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const helpIcons = document.querySelectorAll('.help-icon');
+            helpIcons.forEach(icon => {
+                icon.addEventListener('click', (event) => {
+                    event.stopPropagation(); 
+                    const helpId = icon.dataset.helpId;
+                    const helpInfo = helpTexts[helpId];
+                    if (helpInfo) {
+                        openInfoModal(helpInfo.title, helpInfo.text); 
+                    } else {
+                        console.warn('Help text not found for ID:', helpId);
+                        openInfoModal('ヘルプ', 'この機能の説明は現在準備中です。');
+                    }
+                });
+            });
+        });
 
         loadFromLocalStorage(); 
         render(); 
