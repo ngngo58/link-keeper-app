@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link Keeper</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .tab-button.active {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .tab-button {
+            transition: background-color 0.3s ease;
+        }
+        .url-item {
+            transition: transform 0.2s ease-out;
+        }
+        .url-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 8px;
+        }
+        .sortable-ghost {
+            opacity: 0.4;
+            background: #c8ebfb;
+        }
+        .favorite-btn.favorited .fa-star {
+            color: #facc15; /* Gold color for favorited star */
+        }
+        .filter-favorite-btn.active {
+            background-color: #facc15; /* Gold */
+            color: #424242; /* Darker text for contrast */
+            border-color: #facc15;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        .url-item-divider {
+            border-top: 1px solid #e5e7eb; /* Tailwind gray-200 */
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .info-value { /* Added for better word breaking */
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+    <div class="container mx-auto p-4">
+        <header class="mb-6 flex justify-between items-center">
+            <h1 class="text-4xl font-bold text-center text-blue-600 flex-grow">Link Keeper</h1>
+        </header>
+
+        <div class="mb-6 p-4 bg-white shadow-md rounded-lg">
+            <h2 class="text-2xl font-semibold mb-3 text-gray-700" id="tabManagementTitle">■ ワークスペース</h2>
+            <div class="flex flex-wrap gap-2 mb-4" id="tabsContainer">
+                <button id="allUrlsTabButton" class="tab-button active bg-blue-500 text-white px-4 py-2 rounded-md shadow hover:bg-blue-600">ダッシュボード</button>
+            </div>
+            <div id="addTabSection" class="flex gap-2">
+                <input type="text" id="newTabNameInput" placeholder="新しいワークスペース名" class="flex-grow p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                <button id="addTabButton" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md shadow">
+                    <i class="fas fa-plus mr-1"></i> ワークスペース追加
+                </button>
+            </div>
+        </div>
+
+        <div class="mb-4 flex flex-col md:flex-row justify-between items-center gap-3">
+            <h2 class="text-2xl font-semibold text-gray-700" id="currentTabTitle">■ ダッシュボード</h2>
+            <div class="flex gap-2 flex-wrap">
+                <button id="openAddUrlModalButton" class="bg-cyan-500 hover:bg-cyan-600 text-white px-4 py-2 rounded-md shadow text-sm">
+                    <i class="fas fa-plus-circle mr-1"></i> 新規登録
+                </button>
+                <button id="exportButton" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-md shadow text-sm">
+                    <i class="fas fa-file-export mr-1"></i> エクスポート (CSV)
+                </button>
+                <label class="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded-md shadow cursor-pointer text-sm">
+                    <i class="fas fa-file-import mr-1"></i> インポート (CSV)
+                    <input type="file" id="importFile" class="hidden" accept=".csv">
+                </label>
+                <label id="googleBookmarkImportLabel" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-md shadow cursor-pointer text-sm">
+                    <i class="fab fa-google mr-1"></i> ブックマークHTML変換 (Link Keeper用CSV)
+                    <input type="file" id="googleBookmarkImportFile" class="hidden" accept=".html">
+                </label>
+                </div>
+        </div>
+
+        <div class="mb-6 p-4 bg-white shadow-md rounded-lg">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex-grow w-full md:w-auto flex items-center gap-2">
+                    <input type="text" id="searchInput" placeholder="" class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"> <button id="clearSearchButton" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-2 rounded-md shadow text-sm" title="検索クリア">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="flex gap-2 flex-wrap items-center">
+                     <button id="filterFavoritesButton" class="filter-favorite-btn bg-gray-200 hover:bg-yellow-300 text-gray-700 px-4 py-2 rounded-md shadow text-sm border border-gray-300">
+                        <i class="fas fa-star mr-1"></i> お気に入り表示 OFF
+                    </button>
+                     <button id="selectAllButton" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-md shadow text-sm">
+                        <i class="fas fa-check-double mr-1"></i> 全て選択
+                    </button>
+                    <button id="deselectAllButton" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md shadow text-sm">
+                        <i class="fas fa-square mr-1"></i> 選択解除
+                    </button>
+                    <button id="deleteSelectedButton" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md shadow text-sm">
+                        <i class="fas fa-trash-alt mr-1"></i> 選択削除
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="urlListContainer" class="space-y-3"></div>
+        <div id="emptyMessage" class="text-center text-gray-500 py-10 text-xl hidden">
+            <i class="fas fa-folder-open fa-3x mb-3"></i>
+            <p id="emptyMessageText">登録されているURLはありません。</p>
+            <p id="emptyMessageTabContext" class="text-sm"></p>
+        </div>
+    </div>
+
+    <div id="urlFormModal" class="modal">
+        <div class="modal-content">
+            <h3 id="urlModalTitle" class="text-2xl font-semibold mb-6 text-gray-700">新規登録</h3>
+            <div class="space-y-4">
+                <div>
+                    <label for="modalUrlNameInput" class="block text-sm font-medium text-gray-700 mb-1">名称</label>
+                    <input type="text" id="modalUrlNameInput" placeholder="例: Google検索" class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="modalUrlInput" class="block text-sm font-medium text-gray-700 mb-1">URL</label>
+                    <input type="url" id="modalUrlInput" placeholder="例: https://www.google.com" class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="modalUrlDescriptionInput" class="block text-sm font-medium text-gray-700 mb-1">詳細</label>
+                    <textarea id="modalUrlDescriptionInput" placeholder="例: 検索エンジン" rows="3" class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"></textarea>
+                </div>
+                <div>
+                    <label for="modalUrlTagsInput" class="block text-sm font-medium text-gray-700 mb-1">タグ (カンマ区切り)</label>
+                    <input type="text" id="modalUrlTagsInput" placeholder="例: 仕事,ツール,検索" class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" id="modalIsFavoriteInput" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                    <label for="modalIsFavoriteInput" class="ml-2 block text-sm text-gray-900">お気に入りとして登録する</label>
+                </div>
+                <input type="hidden" id="modalEditingUrlId">
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+                <button id="modalAddOrUpdateUrlButton" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-md shadow">登録</button>
+                <button id="modalCancelUrlButton" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-2 rounded-md shadow">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content">
+            <h3 id="confirmModalTitle" class="text-xl font-semibold mb-4">確認</h3>
+            <p id="confirmModalMessage" class="mb-6">本当に実行しますか？</p>
+            <div id="confirmModalButtonContainer" class="flex justify-end gap-3">
+            </div>
+        </div>
+    </div>
+    
+    <div class="version-info text-xs text-gray-500 text-center mt-8">Ver1.0.8</div>
+
+    <script>
+        // DOM Elements
+        const tabsContainer = document.getElementById('tabsContainer');
+        const addTabButton = document.getElementById('addTabButton');
+        const newTabNameInput = document.getElementById('newTabNameInput');
+        const addTabSection = document.getElementById('addTabSection');
+        const allUrlsTabButton = document.getElementById('allUrlsTabButton'); 
+        const currentTabTitle = document.getElementById('currentTabTitle');
+        const openAddUrlModalButton = document.getElementById('openAddUrlModalButton');
+        const urlListContainer = document.getElementById('urlListContainer');
+        const searchInput = document.getElementById('searchInput');
+        const clearSearchButton = document.getElementById('clearSearchButton'); 
+        const filterFavoritesButton = document.getElementById('filterFavoritesButton'); 
+        const selectAllButton = document.getElementById('selectAllButton');
+        const deselectAllButton = document.getElementById('deselectAllButton');
+        const deleteSelectedButton = document.getElementById('deleteSelectedButton');
+        const exportButton = document.getElementById('exportButton');
+        const importFileInput = document.getElementById('importFile');
+        const googleBookmarkImportLabel = document.getElementById('googleBookmarkImportLabel');
+        const googleBookmarkImportFile = document.getElementById('googleBookmarkImportFile');
+        const emptyMessage = document.getElementById('emptyMessage');
+        const emptyMessageText = document.getElementById('emptyMessageText'); 
+        const emptyMessageTabContext = document.getElementById('emptyMessageTabContext');
+        const confirmModalButtonContainer = document.getElementById('confirmModalButtonContainer');
+        const urlFormModal = document.getElementById('urlFormModal');
+        const urlModalTitle = document.getElementById('urlModalTitle');
+        const modalUrlNameInput = document.getElementById('modalUrlNameInput');
+        const modalUrlInput = document.getElementById('modalUrlInput');
+        const modalUrlDescriptionInput = document.getElementById('modalUrlDescriptionInput');
+        const modalUrlTagsInput = document.getElementById('modalUrlTagsInput');
+        const modalIsFavoriteInput = document.getElementById('modalIsFavoriteInput'); 
+        const modalEditingUrlIdInput = document.getElementById('modalEditingUrlId');
+        const modalAddOrUpdateUrlButton = document.getElementById('modalAddOrUpdateUrlButton');
+        const modalCancelUrlButton = document.getElementById('modalCancelUrlButton');
+        const confirmationModal = document.getElementById('confirmationModal');
+        const confirmModalTitle = document.getElementById('confirmModalTitle');
+        const confirmModalMessage = document.getElementById('confirmModalMessage');
+
+        let data = { tabs: [], urls: [] };
+        let currentView = 'all'; 
+        let sortableUrlList = null;
+        let showOnlyFavorites = false; 
+        
+        const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+        const saveToLocalStorage = () => localStorage.setItem('urlManagerDataV14', JSON.stringify(data)); // MODIFIED: Version bump
+        const loadFromLocalStorage = () => {
+            const storedData = localStorage.getItem('urlManagerDataV14'); // MODIFIED: Version bump
+            if (storedData) {
+                try {
+                    const parsedData = JSON.parse(storedData);
+                    if (parsedData && typeof parsedData === 'object') {
+                        data.tabs = Array.isArray(parsedData.tabs) ? parsedData.tabs : [];
+                        data.urls = Array.isArray(parsedData.urls) ? parsedData.urls : [];
+                        data.tabs.forEach(tab => { if (!tab.id || !tab.name) console.warn("Invalid tab data found:", tab);});
+                        const existingTabIds = new Set(data.tabs.map(t => t.id));
+                        data.tabs.forEach(tab => {
+                            let orderCounter = 0;
+                            data.urls.filter(url => url.tabId === tab.id).sort((a,b) => (a.order || 0) - (b.order || 0))
+                                .forEach(url => {
+                                    if (typeof url.order !== 'number') url.order = orderCounter;
+                                    orderCounter = Math.max(orderCounter, url.order) + 1;
+                                    // Ensure tags are always an array, even if loaded from older data
+                                    if (typeof url.tags === 'string') {
+                                        // Assuming older data might have used comma or semicolon.
+                                        // For consistency, let's prefer splitting by comma now for internal representation.
+                                        // This part might need adjustment if old data strictly used semicolon for multiple tags.
+                                        url.tags = url.tags.split(/[,;]/).map(t => t.trim()).filter(t => t);
+                                    } else if (!Array.isArray(url.tags)) {
+                                        url.tags = [];
+                                    }
+                                    if (typeof url.isFavorite !== 'boolean') url.isFavorite = false; 
+                                });
+                        });
+                        let unassociatedOrderCounter = 0;
+                        data.urls.forEach(url => {
+                            if (!url.tabId || !existingTabIds.has(url.tabId)) {
+                                if (typeof url.order !== 'number') url.order = unassociatedOrderCounter++;
+                            }
+                             if (typeof url.tags === 'string') {
+                                url.tags = url.tags.split(/[,;]/).map(t => t.trim()).filter(t => t);
+                            } else if (!Array.isArray(url.tags)) {
+                                url.tags = [];
+                            }
+                            if (typeof url.isFavorite !== 'boolean') url.isFavorite = false; 
+                        });
+                    } else { data = { tabs: [], urls: [] }; }
+                } catch (error) {
+                    console.error("Error loading or parsing data from localStorage:", error);
+                    data = { tabs: [], urls: [] };
+                }
+            } else { data = { tabs: [], urls: [] }; }
+        };
+        
+        const openStandardConfirmationModal = (title, message, onConfirm) => { 
+            confirmModalTitle.textContent = title;
+            confirmModalMessage.textContent = message;
+            confirmModalButtonContainer.innerHTML = ''; 
+
+            const yesButton = document.createElement('button');
+            yesButton.textContent = 'はい';
+            yesButton.className = 'modal-button bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md';
+            yesButton.addEventListener('click', () => {
+                if (onConfirm) onConfirm();
+                confirmationModal.style.display = 'none';
+            });
+
+            const noButton = document.createElement('button');
+            noButton.textContent = 'いいえ';
+            noButton.className = 'modal-button bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md';
+            noButton.addEventListener('click', () => {
+                confirmationModal.style.display = 'none';
+            });
+            
+            confirmModalButtonContainer.appendChild(yesButton);
+            confirmModalButtonContainer.appendChild(noButton);
+            confirmationModal.style.display = 'block';
+        };
+
+        const openInfoModal = (title, message) => {
+            confirmModalTitle.textContent = title;
+            confirmModalMessage.textContent = message;
+            confirmModalButtonContainer.innerHTML = '';
+
+            const okButton = document.createElement('button');
+            okButton.textContent = 'OK';
+            okButton.className = 'modal-button bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md';
+            okButton.addEventListener('click', () => {
+                confirmationModal.style.display = 'none';
+            });
+            
+            confirmModalButtonContainer.appendChild(okButton);
+            confirmationModal.style.display = 'block';
+        };
+
+        const openUrlModal = (mode = 'add', urlId = null) => {
+            resetUrlModalForm();
+            if (mode === 'add') {
+                urlModalTitle.textContent = '新規登録'; 
+                modalAddOrUpdateUrlButton.innerHTML = '<i class="fas fa-plus mr-1"></i> 登録';
+                modalIsFavoriteInput.checked = false; 
+            } else if (mode === 'edit' && urlId) {
+                const urlToEdit = data.urls.find(u => u.id === urlId);
+                if (urlToEdit) {
+                    urlModalTitle.textContent = '編集'; 
+                    modalUrlNameInput.value = urlToEdit.name;
+                    modalUrlInput.value = urlToEdit.url;
+                    modalUrlDescriptionInput.value = urlToEdit.description;
+                    modalUrlTagsInput.value = (urlToEdit.tags || []).join(', '); // Tags are joined by comma for display in modal
+                    modalIsFavoriteInput.checked = urlToEdit.isFavorite; 
+                    modalEditingUrlIdInput.value = urlToEdit.id;
+                    modalAddOrUpdateUrlButton.innerHTML = '<i class="fas fa-save mr-1"></i> 更新';
+                } else { console.error("URL to edit not found:", urlId); return; }
+            }
+            urlFormModal.style.display = 'block';
+            modalUrlNameInput.focus(); 
+        };
+        const closeUrlModal = () => { urlFormModal.style.display = 'none'; resetUrlModalForm(); };
+        const resetUrlModalForm = () => {
+            modalUrlNameInput.value = ''; modalUrlInput.value = ''; modalUrlDescriptionInput.value = '';
+            modalUrlTagsInput.value = ''; modalIsFavoriteInput.checked = false; modalEditingUrlIdInput.value = '';
+        };
+        openAddUrlModalButton.addEventListener('click', () => {
+            if (currentView === 'all') { 
+                openInfoModal('情報', 'URLを登録するには、まずワークスペースを選択してください。');
+                return;
+            }
+            openUrlModal('add');
+        });
+        modalCancelUrlButton.addEventListener('click', closeUrlModal);
+        modalAddOrUpdateUrlButton.addEventListener('click', () => {
+            const name = modalUrlNameInput.value.trim();
+            const urlValue = modalUrlInput.value.trim();
+            const description = modalUrlDescriptionInput.value.trim();
+            const tagsString = modalUrlTagsInput.value.trim(); 
+            const tags = tagsString ? tagsString.split(',').map(tag => tag.trim()).filter(tag => tag) : []; // Modal input uses comma
+            const isFavorite = modalIsFavoriteInput.checked; 
+            const editingId = modalEditingUrlIdInput.value;
+
+            if (!name || !urlValue) { openInfoModal('入力エラー', '名称とURLは必須です。'); return; } 
+            try { new URL(urlValue); } catch (_) { openInfoModal('入力エラー', '有効なURLを入力してください。'); return; }
+            
+            if (editingId) { 
+                const urlToUpdate = data.urls.find(u => u.id === editingId);
+                if (urlToUpdate) {
+                    urlToUpdate.name = name; urlToUpdate.url = urlValue;
+                    urlToUpdate.description = description; urlToUpdate.tags = tags;
+                    urlToUpdate.isFavorite = isFavorite; 
+                }
+            } else { 
+                if (currentView === 'all') { openInfoModal('エラー', 'URLを登録するワークスペースを選択してください。'); return; }
+                data.urls.forEach(url => {
+                    if (url.tabId === currentView) {
+                        url.order = (url.order || 0) + 1;
+                    }
+                });
+                const newUrl = {
+                    id: generateId(), tabId: currentView, name, url: urlValue, description, tags,
+                    isFavorite: isFavorite, 
+                    order: 0 
+                };
+                data.urls.push(newUrl);
+            }
+            closeUrlModal(); saveAndRender();
+        });
+        
+        window.addEventListener('click', (event) => {
+            if (event.target == confirmationModal) { confirmationModal.style.display = 'none';} 
+            if (event.target == urlFormModal) closeUrlModal();
+        });
+         window.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                if (urlFormModal.style.display === 'block') closeUrlModal();
+                if (confirmationModal.style.display === 'block') { confirmationModal.style.display = 'none';}
+            }
+        });
+
+        const renderTabs = () => {
+            tabsContainer.innerHTML = ''; 
+            const dashboardButton = document.getElementById('allUrlsTabButton'); 
+            
+            if (currentView === 'all') {
+                dashboardButton.classList.add('active', 'bg-blue-500', 'text-white');
+                dashboardButton.classList.remove('bg-gray-200', 'text-gray-700');
+            } else {
+                dashboardButton.classList.remove('active', 'bg-blue-500', 'text-white');
+                dashboardButton.classList.add('bg-gray-200', 'text-gray-700');
+            }
+            if (!dashboardButton.hasAttribute('data-listener-attached')) {
+                 dashboardButton.addEventListener('click', () => { currentView = 'all'; render(); });
+                 dashboardButton.setAttribute('data-listener-attached', 'true');
+            }
+            tabsContainer.appendChild(dashboardButton); 
+
+            const dynamicTabsContainer = document.createElement('div'); 
+            dynamicTabsContainer.className = 'flex flex-wrap gap-2';
+            
+            data.tabs.forEach(tab => {
+                const tabButton = document.createElement('button');
+                tabButton.className = `tab-button relative group px-4 py-2 rounded-md shadow hover:bg-blue-500 hover:text-white`;
+                tabButton.textContent = tab.name; tabButton.dataset.tabId = tab.id;
+                if (tab.id === currentView) tabButton.classList.add('active', 'bg-blue-500', 'text-white');
+                else tabButton.classList.add('bg-gray-200', 'text-gray-700');
+                tabButton.addEventListener('click', () => { currentView = tab.id; render(); });
+                const deleteTabBtn = document.createElement('button');
+                deleteTabBtn.innerHTML = '<i class="fas fa-times text-xs"></i>';
+                deleteTabBtn.className = 'absolute top-0 right-0 -mt-1 -mr-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs';
+                deleteTabBtn.title = 'ワークスペースを削除'; 
+                deleteTabBtn.onclick = (e) => { e.stopPropagation(); openStandardConfirmationModal('ワークスペース削除の確認', `ワークスペース「${tab.name}」と関連する全てのURLを削除しますか？この操作は元に戻せません。`, () => deleteTab(tab.id)); };
+                tabButton.appendChild(deleteTabBtn); 
+                dynamicTabsContainer.appendChild(tabButton);
+            });
+            tabsContainer.appendChild(dynamicTabsContainer); 
+        };
+        const addTab = () => {
+            const tabName = newTabNameInput.value.trim();
+            if (tabName) {
+                if (data.tabs.find(tab => tab.name === tabName)) { openInfoModal('エラー', '同じ名前のワークスペースが既に存在します。'); return; } 
+                const newTab = { id: generateId(), name: tabName }; data.tabs.push(newTab);
+                newTabNameInput.value = ''; currentView = newTab.id; saveAndRender();
+            } else { openInfoModal('入力エラー', 'ワークスペース名を入力してください。'); } 
+        };
+        const deleteTab = (tabIdToDelete) => {
+            data.tabs = data.tabs.filter(tab => tab.id !== tabIdToDelete);
+            data.urls = data.urls.filter(url => url.tabId !== tabIdToDelete);
+            if (currentView === tabIdToDelete) currentView = 'all'; 
+            saveAndRender();
+        };
+        addTabButton.addEventListener('click', addTab);
+
+        const renderUrls = () => {
+            urlListContainer.innerHTML = ''; 
+            const searchTerm = searchInput.value.toLowerCase(); 
+            let urlsToDisplay = [];
+
+            if (currentView === 'all') {
+                urlsToDisplay = data.urls.map(url => {
+                    const tab = data.tabs.find(t => t.id === url.tabId);
+                    return { ...url, tabName: tab ? tab.name : '未分類' };
+                });
+            } else { 
+                urlsToDisplay = data.urls.filter(url => url.tabId === currentView); 
+            }
+            
+            if (showOnlyFavorites) {
+                urlsToDisplay = urlsToDisplay.filter(url => url.isFavorite);
+            }
+
+            if (searchTerm) {
+                urlsToDisplay = urlsToDisplay.filter(url => 
+                    url.name.toLowerCase().includes(searchTerm) || 
+                    (url.description && url.description.toLowerCase().includes(searchTerm)) || 
+                    (url.tags && url.tags.some(tag => tag.toLowerCase().includes(searchTerm))) || 
+                    (url.tabName && url.tabName.toLowerCase().includes(searchTerm) && currentView === 'all') 
+                );
+            }
+            urlsToDisplay.sort((a, b) => (a.order || 0) - (b.order || 0));
+            
+            emptyMessage.classList.toggle('hidden', urlsToDisplay.length > 0); 
+
+            if (urlsToDisplay.length === 0) {
+                let message = "表示するURLはありません。"; 
+                if (searchTerm && showOnlyFavorites) {
+                    message = "検索結果に一致するお気に入りURLはありません。";
+                } else if (searchTerm) {
+                    message = "検索結果に一致するURLはありません。";
+                } else if (showOnlyFavorites) {
+                     message = currentView === 'all' ? "お気に入りのURLはまだありません。" : `「${data.tabs.find(t=>t.id === currentView)?.name || 'このワークスペース'}」にお気に入りのURLはありません。`; 
+                } else if (currentView === 'all' && data.urls.length === 0) { 
+                    message = "まだURLが登録されていません。";
+                } else if (currentView !== 'all' && !data.urls.some(url => url.tabId === currentView)) { 
+                     const currentTabObj = data.tabs.find(t => t.id === currentView);
+                     message = `「${currentTabObj?.name || 'このワークスペース'}」にURLを登録しましょう。`; 
+                }
+                emptyMessageText.textContent = message;
+            }
+
+            urlsToDisplay.forEach(urlData => {
+                const urlItem = document.createElement('div');
+                urlItem.className = 'url-item bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex flex-col gap-1';
+                urlItem.dataset.urlId = urlData.id;
+                const contentWrapper = document.createElement('div');
+                contentWrapper.className = 'flex items-start gap-3';
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'form-checkbox h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-1 self-start';
+                checkbox.dataset.urlId = urlData.id; 
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'flex-grow space-y-1';
+                const addInfoItem = (text, isLink = false, href = '#') => {
+                    if (!text && !isLink) return; 
+                    if (infoDiv.children.length > 0) { 
+                        const divider = document.createElement('hr');
+                        divider.className = 'url-item-divider';
+                        infoDiv.appendChild(divider);
+                    }
+                    const p = document.createElement('p');
+                    p.className = 'info-value';
+                    if (isLink) {
+                        const a = document.createElement('a');
+                        a.href = href;
+                        a.textContent = text || href; 
+                        a.target = '_blank';
+                        a.rel = 'noopener noreferrer';
+                        a.className = 'text-blue-600 hover:underline font-semibold';
+                        p.appendChild(a);
+                    } else { p.textContent = text; }
+                    infoDiv.appendChild(p);
+                };
+                const addTagsDisplay = (tagsArray) => {
+                     if (tagsArray && tagsArray.length > 0) {
+                        if (infoDiv.children.length > 0) { const divider = document.createElement('hr'); divider.className = 'url-item-divider'; infoDiv.appendChild(divider); }
+                        const tagsContainer = document.createElement('div');
+                        tagsContainer.className = 'flex flex-wrap gap-1 mt-1'; 
+                        tagsArray.forEach(tag => {
+                            const tagSpan = document.createElement('span');
+                            tagSpan.className = 'bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full text-xs';
+                            tagSpan.textContent = tag;
+                            tagsContainer.appendChild(tagSpan);
+                        });
+                        infoDiv.appendChild(tagsContainer);
+                     }
+                };
+                if (currentView === 'all' && urlData.tabName) {
+                    const tabNameP = document.createElement('p');
+                    tabNameP.className = 'text-indigo-600 font-semibold info-value';
+                    tabNameP.textContent = `▼${urlData.tabName}`;
+                    infoDiv.appendChild(tabNameP);
+                }
+                addInfoItem(urlData.name, true, urlData.url);
+                addInfoItem(urlData.url); 
+                if (urlData.description) addInfoItem(urlData.description);
+                addTagsDisplay(urlData.tags);
+                contentWrapper.appendChild(checkbox);
+                contentWrapper.appendChild(infoDiv);
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'flex items-center gap-2 mt-2 ml-auto flex-shrink-0 self-end'; 
+                const favoriteBtn = document.createElement('button');
+                favoriteBtn.className = `favorite-btn p-2 rounded-full hover:bg-gray-200 transition-colors ${urlData.isFavorite ? 'favorited' : ''}`;
+                favoriteBtn.innerHTML = `<i class="fas fa-star ${urlData.isFavorite ? 'text-yellow-400' : 'text-gray-400'}"></i>`;
+                favoriteBtn.title = urlData.isFavorite ? 'お気に入り解除' : 'お気に入り登録';
+                favoriteBtn.onclick = () => toggleFavorite(urlData.id);
+                const editBtn = document.createElement('button');
+                editBtn.className = 'p-2 rounded-full hover:bg-gray-200 transition-colors text-blue-500 hover:text-blue-700';
+                editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+                editBtn.title = '編集';
+                editBtn.onclick = () => openUrlModal('edit', urlData.id);
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'p-2 rounded-full hover:bg-gray-200 transition-colors text-red-500 hover:text-red-700';
+                deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+                deleteBtn.title = '削除';
+                deleteBtn.onclick = () => { openStandardConfirmationModal('URL削除の確認', `URL「${urlData.name}」を削除しますか？`, () => deleteUrl(urlData.id)); };
+                actionsDiv.appendChild(editBtn);
+                actionsDiv.appendChild(favoriteBtn);
+                actionsDiv.appendChild(deleteBtn);
+                urlItem.appendChild(contentWrapper);
+                urlItem.appendChild(actionsDiv);
+                urlListContainer.appendChild(urlItem);
+            });
+
+            if (sortableUrlList) sortableUrlList.destroy();
+            if (currentView !== 'all' && urlsToDisplay.length > 0) { 
+                sortableUrlList = new Sortable(urlListContainer, {
+                    animation: 150, ghostClass: 'sortable-ghost', handle: '.url-item', 
+                    onEnd: (evt) => {
+                        const urlId = evt.item.dataset.urlId;
+                        const newIndex = evt.newDraggableIndex;
+                        let displayedUrlsInCurrentTab = data.urls.filter(url => url.tabId === currentView).sort((a, b) => (a.order || 0) - (b.order || 0));
+                        const movedItem = displayedUrlsInCurrentTab.find(u => u.id === urlId);
+                        if (!movedItem) return;
+                        displayedUrlsInCurrentTab = displayedUrlsInCurrentTab.filter(u => u.id !== urlId);
+                        displayedUrlsInCurrentTab.splice(newIndex, 0, movedItem);
+                        displayedUrlsInCurrentTab.forEach((url, index) => {
+                            const originalUrl = data.urls.find(u => u.id === url.id);
+                            if (originalUrl) originalUrl.order = index;
+                        });
+                        saveAndRender();
+                    }
+                });
+            } else { sortableUrlList = null; }
+        };
+        const deleteUrl = (urlIdToDelete) => {
+            data.urls = data.urls.filter(url => url.id !== urlIdToDelete);
+            if (currentView !== 'all') {
+                const urlsInCurrentTab = data.urls.filter(url => url.tabId === currentView).sort((a,b) => (a.order || 0) - (b.order || 0));
+                urlsInCurrentTab.forEach((url, index) => {
+                    const originalUrl = data.urls.find(u => u.id === url.id); 
+                    if (originalUrl) originalUrl.order = index;
+                });
+            }
+            saveAndRender();
+        };
+        const toggleFavorite = (urlId) => {
+            const urlToToggle = data.urls.find(u => u.id === urlId);
+            if (urlToToggle) { urlToToggle.isFavorite = !urlToToggle.isFavorite; saveAndRender(); }
+        };
+        
+        searchInput.addEventListener('input', renderUrls);
+        clearSearchButton.addEventListener('click', () => { searchInput.value = ''; renderUrls(); });
+        filterFavoritesButton.addEventListener('click', () => {
+            showOnlyFavorites = !showOnlyFavorites;
+            filterFavoritesButton.innerHTML = `<i class="fas fa-star mr-1"></i> お気に入り表示 ${showOnlyFavorites ? 'ON' : 'OFF'}`;
+            filterFavoritesButton.classList.toggle('active', showOnlyFavorites);
+            if (showOnlyFavorites) {
+                filterFavoritesButton.classList.remove('bg-gray-200', 'hover:bg-yellow-300', 'text-gray-700', 'border-gray-300');
+                filterFavoritesButton.classList.add('bg-yellow-400', 'hover:bg-yellow-500', 'text-gray-800', 'border-yellow-400');
+            } else {
+                filterFavoritesButton.classList.remove('bg-yellow-400', 'hover:bg-yellow-500', 'text-gray-800', 'border-yellow-400');
+                filterFavoritesButton.classList.add('bg-gray-200', 'hover:bg-yellow-300', 'text-gray-700', 'border-gray-300');
+            }
+            renderUrls(); 
+        });
+        selectAllButton.addEventListener('click', () => { document.querySelectorAll('#urlListContainer input[type="checkbox"]').forEach(cb => cb.checked = true); });
+        deselectAllButton.addEventListener('click', () => { document.querySelectorAll('#urlListContainer input[type="checkbox"]').forEach(cb => cb.checked = false); });
+        deleteSelectedButton.addEventListener('click', () => {
+            const selectedIds = [];
+            document.querySelectorAll('#urlListContainer input[type="checkbox"]:checked').forEach(cb => { selectedIds.push(cb.dataset.urlId); });
+            if (selectedIds.length === 0) { openInfoModal('情報', '削除するURLを選択してください。'); return; }
+            openStandardConfirmationModal('選択したURLの削除確認', `${selectedIds.length}件のURLを削除しますか？`, () => {
+                data.urls = data.urls.filter(url => !selectedIds.includes(url.id));
+                if (currentView !== 'all') {
+                    const urlsInCurrentTab = data.urls.filter(url => url.tabId === currentView).sort((a,b) => (a.order || 0) - (b.order || 0));
+                    urlsInCurrentTab.forEach((url, index) => {
+                        const originalUrl = data.urls.find(u => u.id === url.id);
+                        if (originalUrl) originalUrl.order = index;
+                    });
+                }
+                saveAndRender();
+            });
+        });
+
+        const escapeCsvCell = (cell) => {
+            if (cell === null || cell === undefined) cell = '';
+            cell = String(cell);
+            if (cell.includes(',') || cell.includes('\n') || cell.includes('"')) {
+                cell = cell.replace(/"/g, '""'); return `"${cell}"`; 
+            }
+            return cell;
+        };
+        const parseCsvRow = (rowString) => {
+            const result = []; let currentCell = ''; let inQuotes = false;
+            for (let i = 0; i < rowString.length; i++) {
+                const char = rowString[i];
+                if (char === '"') {
+                    if (inQuotes && i + 1 < rowString.length && rowString[i + 1] === '"') { currentCell += '"'; i++; } else { inQuotes = !inQuotes; }
+                } else if (char === ',' && !inQuotes) { result.push(currentCell); currentCell = '';
+                } else { currentCell += char; }
+            }
+            result.push(currentCell); 
+            return result.map(cell => { 
+                if (cell.startsWith('"') && cell.endsWith('"')) { return cell.slice(1, -1).replace(/""/g, '"');}
+                return cell;
+            });
+        };
+
+        exportButton.addEventListener('click', () => {
+            const searchTerm = searchInput.value.toLowerCase();
+            let urlsToExport = [];
+            if (currentView === 'all') {
+                urlsToExport = data.urls.map(url => {
+                    const tab = data.tabs.find(t => t.id === url.tabId);
+                    return { ...url, tabName: tab ? tab.name : '未分類' };
+                });
+            } else {
+                urlsToExport = data.urls.filter(url => url.tabId === currentView).map(url => { 
+                    const tab = data.tabs.find(t => t.id === url.tabId);
+                    return { ...url, tabName: tab ? tab.name : '未分類' };
+                });
+            }
+            if (showOnlyFavorites) { urlsToExport = urlsToExport.filter(url => url.isFavorite); }
+            if (searchTerm) {
+                urlsToExport = urlsToExport.filter(url =>
+                    url.name.toLowerCase().includes(searchTerm) ||
+                    (url.description && url.description.toLowerCase().includes(searchTerm)) ||
+                    (url.tags && url.tags.some(tag => tag.toLowerCase().includes(searchTerm))) || // Tags are searched as an array
+                    (url.tabName && url.tabName.toLowerCase().includes(searchTerm) && currentView === 'all')
+                );
+            }
+            urlsToExport.sort((a, b) => (a.order || 0) - (b.order || 0)); 
+            if (urlsToExport.length === 0) { openInfoModal('情報', 'エクスポートする表示中のURLデータがありません。'); return; }
+            try {
+                const BOM = "\uFEFF"; 
+                const csvHeader = ["Tab Name", "URL Name", "URL", "Description", "Tags", "Is Favorite", "Order"]; 
+                const csvRows = urlsToExport.map(url => { 
+                    const tabName = url.tabName || (data.tabs.find(t => t.id === url.tabId)?.name || '未分類'); 
+                    const tagsString = (url.tags || []).join(','); // MODIFIED: Join tags with comma for CSV export
+                    const isFavoriteString = url.isFavorite ? 'TRUE' : 'FALSE';
+                    return [ escapeCsvCell(tabName), escapeCsvCell(url.name), escapeCsvCell(url.url), escapeCsvCell(url.description), escapeCsvCell(tagsString), escapeCsvCell(isFavoriteString), escapeCsvCell(url.order) ].join(',');
+                });
+                const csvString = [csvHeader.join(','), ...csvRows].join('\r\n'); 
+                const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(BOM + csvString); 
+                
+                const today = new Date();
+                const finalList = today.getFullYear();
+                const mm = String(today.getMonth() + 1).padStart(2, '0');
+                const dd = String(today.getDate()).padStart(2, '0');
+                const formattedDate = `${finalList}${mm}${dd}`;
+                let fileNameSuffix = '';
+                if (currentView === 'all') {
+                    fileNameSuffix = 'all_data';
+                } else {
+                    fileNameSuffix = 'work';
+                }
+                const exportFileDefaultName = `link_keeper_export_${fileNameSuffix}_${formattedDate}.csv`;
+
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', exportFileDefaultName);
+                linkElement.click();
+            } catch (error) { console.error("CSV Export error:", error); openInfoModal('エクスポートエラー', "CSVエクスポート中にエラーが発生しました。"); }
+        });
+
+        importFileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file && file.name.endsWith('.csv')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const csvString = e.target.result;
+                        const lines = csvString.split(/\r\n|\n/);
+                        if (lines.length < 1) { openInfoModal('CSVエラー', '無効なCSVファイルです。ヘッダー行がありません。'); return; }
+                        let headerLine = lines.shift().trim();
+                        if (headerLine.charCodeAt(0) === 0xFEFF) headerLine = headerLine.substring(1);
+                        const headers = parseCsvRow(headerLine);
+                        const expectedHeaders = ["Tab Name", "URL Name", "URL", "Description", "Tags", "Is Favorite", "Order"];
+                        const headerMap = {};
+                        expectedHeaders.forEach((expectedHeader) => {
+                            const foundIndex = headers.findIndex(h => h.trim().toLowerCase() === expectedHeader.trim().toLowerCase());
+                            if (foundIndex !== -1) { headerMap[expectedHeader] = foundIndex;
+                            } else { if (expectedHeader !== "Order") { console.warn(`CSVヘッダー "${expectedHeader}" が見つかりません。`); } }
+                        });
+                        if (headerMap["URL Name"] === undefined || headerMap["URL"] === undefined || headerMap["Tab Name"] === undefined) {
+                            openInfoModal('CSVエラー', '無効なCSVファイルです。必須のヘッダー (Tab Name, URL Name, URL) が見つかりません。'); return;
+                        }
+
+                        if (currentView === 'all') { 
+                            const newTabs = []; const newUrls = []; const tabNameIdMap = {};
+                            lines.forEach((line, lineIndex) => {
+                                if (line.trim() === '') return;
+                                const values = parseCsvRow(line);
+                                if (values.length < Math.max(headerMap["URL Name"], headerMap["URL"], headerMap["Tab Name"]) + 1) { console.warn(`CSVの ${lineIndex + 2}行目は列数が不足しています。スキップします。: ${line}`); return; }
+                                const urlName = values[headerMap["URL Name"]]?.trim();
+                                const urlValue = values[headerMap["URL"]]?.trim();
+                                const csvTabName = values[headerMap["Tab Name"]]?.trim() || '未分類';
+                                if (!urlName || !urlValue) { console.warn(`CSVの ${lineIndex + 2}行目はURL名またはURLが空です。スキップします。: ${line}`); return; }
+                                let tabId;
+                                if (tabNameIdMap[csvTabName]) { tabId = tabNameIdMap[csvTabName];
+                                } else { tabId = generateId(); tabNameIdMap[csvTabName] = tabId; newTabs.push({ id: tabId, name: csvTabName }); }
+                                const description = headerMap["Description"] !== undefined ? values[headerMap["Description"]]?.trim() || '' : '';
+                                const tagsString = headerMap["Tags"] !== undefined ? values[headerMap["Tags"]]?.trim() || '' : '';
+                                const tags = tagsString ? tagsString.split(',').map(t => t.trim()).filter(t => t) : []; // MODIFIED: Split tags by comma for CSV import
+                                const isFavoriteString = headerMap["Is Favorite"] !== undefined ? values[headerMap["Is Favorite"]]?.trim().toUpperCase() || 'FALSE' : 'FALSE';
+                                const isFavorite = isFavoriteString === 'TRUE';
+                                const order = headerMap["Order"] !== undefined ? parseInt(values[headerMap["Order"]], 10) : NaN;
+                                newUrls.push({ id: generateId(), tabId: tabId, name: urlName, url: urlValue, description: description, tags: tags, isFavorite: isFavorite, order: isNaN(order) ? 0 : order });
+                            });
+                            openStandardConfirmationModal('データインポートの確認 (全体更新)', '現在の全てのデータを上書きしてCSVからインポートしますか？この操作は元に戻せません。', () => {
+                                data.tabs = newTabs; data.urls = newUrls;
+                                data.tabs.forEach(tab => { 
+                                    let orderCounter = 0;
+                                    data.urls.filter(url => url.tabId === tab.id).sort((a,b) => (a.order || 0) - (b.order || 0)).forEach(url => { url.order = orderCounter++; });
+                                });
+                                saveAndRender(); openInfoModal('インポート完了', 'データが正常にインポートされました（全体更新）。');
+                            });
+                        } else { 
+                            const currentTabObj = data.tabs.find(t => t.id === currentView);
+                            if (!currentTabObj) { openInfoModal('エラー', 'インポート先のワークスペースが見つかりません。'); return; }
+                            const currentWorkspaceName = currentTabObj.name;
+                            const urlsFromCsvForWorkspace = []; let importedUrlsCount = 0;
+                            lines.forEach((line, lineIndex) => {
+                                if (line.trim() === '') return;
+                                const values = parseCsvRow(line);
+                                if (headerMap["Tab Name"] === undefined || values.length <= headerMap["Tab Name"]) { console.warn(`CSVの ${lineIndex + 2}行目にはTab Name列がありません。スキップします。: ${line}`); return; }
+                                const csvTabName = values[headerMap["Tab Name"]]?.trim();
+                                if (csvTabName === currentWorkspaceName) {
+                                    if (values.length < Math.max(headerMap["URL Name"], headerMap["URL"]) + 1) { console.warn(`CSVの ${lineIndex + 2}行目は列数が不足しています(URL Name or URL)。スキップします。: ${line}`); return; }
+                                    const urlName = values[headerMap["URL Name"]]?.trim();
+                                    const urlValue = values[headerMap["URL"]]?.trim();
+                                    if (!urlName || !urlValue) { console.warn(`CSVの ${lineIndex + 2}行目はURL名またはURLが空です。スキップします。: ${line}`); return; }
+                                    const description = headerMap["Description"] !== undefined ? values[headerMap["Description"]]?.trim() || '' : '';
+                                    const tagsString = headerMap["Tags"] !== undefined ? values[headerMap["Tags"]]?.trim() || '' : '';
+                                    const tags = tagsString ? tagsString.split(',').map(t => t.trim()).filter(t => t) : []; // MODIFIED: Split tags by comma for CSV import
+                                    const isFavoriteString = headerMap["Is Favorite"] !== undefined ? values[headerMap["Is Favorite"]]?.trim().toUpperCase() || 'FALSE' : 'FALSE';
+                                    const isFavorite = isFavoriteString === 'TRUE';
+                                    const csvOrder = headerMap["Order"] !== undefined ? parseInt(values[headerMap["Order"]], 10) : NaN;
+                                    urlsFromCsvForWorkspace.push({ id: generateId(), tabId: currentView, name: urlName, url: urlValue, description: description, tags: tags, isFavorite: isFavorite, csvOrder: isNaN(csvOrder) ? importedUrlsCount : csvOrder });
+                                    importedUrlsCount++;
+                                }
+                            });
+                            if (urlsFromCsvForWorkspace.length === 0) {
+                                openInfoModal('インポート情報なし', `CSVファイルにワークスペース「${currentWorkspaceName}」向けのデータが見つからなかったか、必須情報が不足していました。インポート処理を中止します。\n(このワークスペースの既存データは変更されていません)`); return;
+                            }
+                            urlsFromCsvForWorkspace.sort((a,b) => (a.csvOrder || 0) - (b.csvOrder || 0));
+                            openStandardConfirmationModal(`データインポートの確認 (「${currentWorkspaceName}」を置換)`, `ワークスペース「${currentWorkspaceName}」の全ての既存URLを削除し、CSVから読み込んだ${urlsFromCsvForWorkspace.length}件のURLで置き換えますか？この操作は元に戻せません。`, () => {
+                                data.urls = data.urls.filter(url => url.tabId !== currentView);
+                                let orderCounter = 0;
+                                urlsFromCsvForWorkspace.forEach(urlToAdd => { urlToAdd.order = orderCounter++; delete urlToAdd.csvOrder; data.urls.push(urlToAdd); });
+                                saveAndRender(); openInfoModal('インポート完了', `${urlsFromCsvForWorkspace.length}件のURLでワークスペース「${currentWorkspaceName}」が正常に置き換えられました。`);
+                            });
+                        }
+                    } catch (error) { console.error('CSV Import error:', error); openInfoModal('CSVエラー', 'CSVファイルの読み込みまたは解析中にエラーが発生しました。\n' + error.message);
+                    } finally { importFileInput.value = ''; }
+                };
+                reader.readAsText(file, 'UTF-8');
+            } else if (file && !file.name.endsWith('.csv')) { openInfoModal('ファイル形式エラー', 'CSVファイル（.csv）を選択してください。'); importFileInput.value = ''; }
+        });
+
+        const handleGoogleBookmarkImport = (file) => {
+            if (!file || !file.name.endsWith('.html')) {
+                openInfoModal('ファイル形式エラー', 'GoogleブックマークのHTMLファイルを選択してください。');
+                googleBookmarkImportFile.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const htmlString = e.target.result;
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(htmlString, "text/html");
+                    
+                    const allLinks = doc.querySelectorAll('dt > a[href], dt > p > a[href], li > a[href]');
+                    const extractedBookmarks = [];
+                    let orderCounter = 0;
+                    let invalidUrlCount = 0;
+
+                    for (let i = 0; i < allLinks.length; i++) {
+                        const anchor = allLinks[i];
+                        let name = anchor.textContent.trim();
+                        const url = anchor.getAttribute('href');
+
+                        if (url && (url.startsWith('http:') || url.startsWith('https:'))) {
+                            if (!name) {
+                                name = 'no_name';
+                            }
+                            extractedBookmarks.push({
+                                tabName: "Googleブックマーク",
+                                urlName: name,
+                                url: url,
+                                description: "",
+                                tags: "", // Tags will be empty string for CSV, as per spec
+                                isFavorite: "FALSE",
+                                order: orderCounter++
+                            });
+                        } else {
+                            if (url && url.toLowerCase().startsWith('javascript:')) {
+                                // Silently skip javascript links
+                            } else {
+                                invalidUrlCount++;
+                            }
+                        }
+                    }
+
+                    if (extractedBookmarks.length === 0) {
+                        let message = '有効なブックマークが見つかりませんでした。';
+                        if (invalidUrlCount > 0) {
+                            message += ` ${invalidUrlCount}件の不正なURLはスキップされました。`;
+                        } else {
+                            message += ' HTMLファイルの内容を確認してください。';
+                        }
+                        openInfoModal('処理結果', message);
+                        return;
+                    }
+
+                    const BOM = "\uFEFF";
+                    const csvHeader = ["Tab Name", "URL Name", "URL", "Description", "Tags", "Is Favorite", "Order"];
+                    const csvRows = extractedBookmarks.map(b => 
+                        [
+                            escapeCsvCell(b.tabName),
+                            escapeCsvCell(b.urlName),
+                            escapeCsvCell(b.url),
+                            escapeCsvCell(b.description),
+                            escapeCsvCell(b.tags), 
+                            escapeCsvCell(b.isFavorite),
+                            escapeCsvCell(b.order)
+                        ].join(',')
+                    );
+                    const csvString = [csvHeader.join(','), ...csvRows].join('\r\n');
+                    const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(BOM + csvString);
+                    
+                    const today = new Date();
+                    const finalList = today.getFullYear();
+                    const mm = String(today.getMonth() + 1).padStart(2, '0');
+                    const dd = String(today.getDate()).padStart(2, '0');
+                    const fileName = `link_keeper_import_data_${finalList}${mm}${dd}.csv`;
+
+                    const linkElement = document.createElement('a');
+                    linkElement.setAttribute('href', dataUri);
+                    linkElement.setAttribute('download', fileName);
+                    linkElement.click();
+
+                    let reportMessage = `${extractedBookmarks.length}件のブックマークをCSVに出力しました。`;
+                    if (invalidUrlCount > 0) {
+                        reportMessage += ` ${invalidUrlCount}件の不正なURLはスキップされました。`;
+                    }
+                    openInfoModal('変換完了', reportMessage);
+
+                } catch (error) {
+                    console.error('Google Bookmark Import error:', error);
+                    openInfoModal('処理エラー', 'ブックマークHTMLファイルの処理中にエラーが発生しました。');
+                } finally {
+                    googleBookmarkImportFile.value = '';
+                }
+            };
+            reader.onerror = () => {
+                openInfoModal('読み込みエラー', 'ファイルの読み込み中にエラーが発生しました。');
+                googleBookmarkImportFile.value = '';
+            };
+            reader.readAsText(file, 'UTF-8');
+        };
+
+        googleBookmarkImportFile.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                handleGoogleBookmarkImport(file);
+            }
+        });
+
+        const saveAndRender = () => { saveToLocalStorage(); render(); };
+        const render = () => {
+            document.querySelectorAll('.tab-button:not(#allUrlsTabButton)').forEach(btn => btn.remove()); 
+            const dashboardButton = document.getElementById('allUrlsTabButton');
+            if (currentView === 'all') {
+                dashboardButton.classList.add('active', 'bg-blue-500', 'text-white');
+                dashboardButton.classList.remove('bg-gray-200', 'text-gray-700');
+                searchInput.placeholder = '名称,詳細,タグ,ワークスペースで検索';
+            } else {
+                dashboardButton.classList.remove('active', 'bg-blue-500', 'text-white');
+                dashboardButton.classList.add('bg-gray-200', 'text-gray-700');
+                searchInput.placeholder = '名称,詳細,タグで検索';
+            }
+            if (!dashboardButton.hasAttribute('data-listener-attached')) { 
+                dashboardButton.addEventListener('click', () => { currentView = 'all'; render(); });
+                dashboardButton.setAttribute('data-listener-attached', 'true');
+            }
+
+            data.tabs.forEach(tab => { 
+                const tabButton = document.createElement('button');
+                tabButton.className = `tab-button relative group px-4 py-2 rounded-md shadow hover:bg-blue-500 hover:text-white`;
+                tabButton.textContent = tab.name; tabButton.dataset.tabId = tab.id;
+                if (tab.id === currentView) tabButton.classList.add('active', 'bg-blue-500', 'text-white');
+                else tabButton.classList.add('bg-gray-200', 'text-gray-700');
+                tabButton.addEventListener('click', () => { currentView = tab.id; render(); });
+                const deleteTabBtn = document.createElement('button');
+                deleteTabBtn.innerHTML = '<i class="fas fa-times text-xs"></i>';
+                deleteTabBtn.className = 'absolute top-0 right-0 -mt-1 -mr-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs';
+                deleteTabBtn.title = 'ワークスペースを削除'; 
+                deleteTabBtn.onclick = (e) => { e.stopPropagation(); openStandardConfirmationModal('ワークスペース削除の確認', `ワークスペース「${tab.name}」と関連する全てのURLを削除しますか？この操作は元に戻せません。`, () => deleteTab(tab.id)); };
+                tabButton.appendChild(deleteTabBtn); 
+                tabsContainer.appendChild(tabButton); 
+            });
+            
+            const tabManagementTitleEl = document.getElementById('tabManagementTitle');
+            if(tabManagementTitleEl) tabManagementTitleEl.textContent = '■ ワークスペース'; 
+            let totalUrlCount = data.urls.length;
+            let currentWorkspaceUrlCount = 0;
+
+            const googleImportBtnLabel = document.getElementById('googleBookmarkImportLabel');
+            if (currentView === 'all') { 
+                addTabSection.style.display = 'flex'; 
+                currentTabTitle.textContent = `■ ダッシュボード (全${totalUrlCount}件)`;
+                openAddUrlModalButton.style.display = 'none'; 
+                if (googleImportBtnLabel) googleImportBtnLabel.style.display = 'inline-flex';
+            } else { 
+                addTabSection.style.display = 'none'; 
+                const currentTabObj = data.tabs.find(tab => tab.id === currentView); 
+                currentWorkspaceUrlCount = data.urls.filter(url => url.tabId === currentView).length;
+                currentTabTitle.textContent = currentTabObj ? `■ ${currentTabObj.name} (${currentWorkspaceUrlCount}件)` : '■ ワークスペースが見つかりません'; 
+                openAddUrlModalButton.style.display = 'inline-block'; 
+                if (googleImportBtnLabel) googleImportBtnLabel.style.display = 'none';
+            }
+            renderUrls();
+        };
+
+        loadFromLocalStorage(); 
+        render(); 
+    </script>
+</body>
+</html>
