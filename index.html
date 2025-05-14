@@ -90,6 +90,15 @@
         .help-icon:hover {
             color: #3b82f6; /* blue-500 */
         }
+        /* MODIFIED: Footer note style for placement within workspace section */
+        .workspace-note {
+            text-align: left; /* Changed from center to left */
+            font-size: 0.75rem; /* text-xs */
+            color: #6b7280; /* gray-500 */
+            margin-top: 0.5rem; /* mt-2, adjusted from mt-8 */
+            padding: 0.25rem 0; /* py-1 px-0, adjusted padding */
+            /* Removed background-color and border-top */
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -104,11 +113,12 @@
             <div class="flex flex-wrap gap-2 mb-4" id="tabsContainer">
                 <button id="allUrlsTabButton" class="tab-button active bg-blue-500 text-white px-4 py-2 rounded-md shadow hover:bg-blue-600">ダッシュボード</button>
             </div>
-            <div id="noWorkspacesGuide" class="text-center text-gray-600 p-4 my-4 bg-yellow-100 border border-yellow-300 rounded-md hidden">
-                散らばるリンクをまとめましょう。最初のワークスペース名は何にしますか？
+            <div id="footerNote" class="workspace-note hidden">
+                </div>
+            <div id="noWorkspacesGuide" class="text-center text-gray-600 p-4 my-2 bg-yellow-100 border border-yellow-300 rounded-md hidden"> 散らばるリンクをまとめましょう。最初のワークスペース名は何にしますか？
+                <p class="text-xs mt-1">データはブラウザに保存されます。エクスポートでのバックアップもご検討ください。</p>
             </div>
-            <div id="addTabSection" class="flex items-center gap-2">
-                <input type="text" id="newTabNameInput" placeholder="新しいワークスペース名" class="flex-grow p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+            <div id="addTabSection" class="flex items-center gap-2 mt-4"> <input type="text" id="newTabNameInput" placeholder="新しいワークスペース名" class="flex-grow p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
                 <button id="addTabButton" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md shadow">
                     <i class="fas fa-plus mr-1"></i> ワークスペース追加
                 </button>
@@ -145,6 +155,7 @@
                 </div>
             </div>
         </div>
+
         <div class="mb-6 p-4 bg-white shadow-md rounded-lg">
             <div class="flex flex-col md:flex-row justify-between items-center gap-4">
                 <div class="flex-grow w-full md:w-auto flex items-center gap-2">
@@ -220,9 +231,7 @@
         </div>
     </div>
     
-    <div class="version-info text-xs text-gray-500 text-center mt-8">Ver1.0.15</div>
-
-    <script>
+    <div class="version-info text-xs text-gray-500 text-center mt-8 mb-4">Ver1.0.19</div> <script>
         // DOM Elements
         const tabsContainer = document.getElementById('tabsContainer');
         const addTabButton = document.getElementById('addTabButton');
@@ -262,7 +271,7 @@
         const noWorkspacesGuide = document.getElementById('noWorkspacesGuide'); 
         const newUrlRegistrationGroup = document.getElementById('newUrlRegistrationGroup'); 
         const googleBookmarkImportGroup = document.getElementById('googleBookmarkImportGroup'); 
-
+        const footerNote = document.getElementById('footerNote');
 
         let data = { tabs: [], urls: [] };
         let currentView = 'all'; 
@@ -272,15 +281,15 @@
         const helpTexts = {
             addWorkspace: { title: "ワークスペース追加", text: "新しい情報整理の箱（ワークスペース）を作ります。名前を入力して追加してください。" },
             newUrlRegistration: { title: "新規登録", text: "選択中のワークスペースに新しいURLを登録します。URLや名前などを入力する画面が開きます。" },
-            exportCsv: { title: "エクスポート (CSV)", text: "表示中のURL情報をCSVファイルで出力します。データのバックアップや共有に便利です。" },
+            exportCsv: { title: "エクスポート (CSV)", text: "表示中のURL情報をCSVファイルで出力します。データはお使いのブラウザに保存されるため、この機能で定期的にバックアップを取ることを強く推奨します。" },
             importCsv: { title: "インポート (CSV)", text: "CSVファイルを読み込みデータを一括登録します。ダッシュボードでは全体更新、ワークスペースでは内容置換です。" },
             googleHtmlImport: { title: "ブックマークHTML変換", text: "ブラウザのブックマークHTMLを読み込み、Link Keeper用CSVに変換して出力します。" }
         };
         
         const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
-        const saveToLocalStorage = () => localStorage.setItem('urlManagerDataV21', JSON.stringify(data));
+        const saveToLocalStorage = () => localStorage.setItem('urlManagerDataV25', JSON.stringify(data));
         const loadFromLocalStorage = () => {
-            const storedData = localStorage.getItem('urlManagerDataV21');
+            const storedData = localStorage.getItem('urlManagerDataV25');
             if (storedData) {
                 try {
                     const parsedData = JSON.parse(storedData);
@@ -348,16 +357,47 @@
             confirmationModal.style.display = 'block';
         };
 
-        const openInfoModal = (title, message) => {
+        const openInfoModal = (title, message, showDontShowAgain = false, dontShowAgainCallback = null) => { 
             confirmModalTitle.textContent = title; 
             confirmModalMessage.textContent = message;
             confirmModalButtonContainer.innerHTML = '';
+
+            const existingCheckboxContainer = confirmModalMessage.parentNode.querySelector('.dont-show-again-container');
+            if (existingCheckboxContainer) {
+                existingCheckboxContainer.remove();
+            }
+
+            if (showDontShowAgain) {
+                const checkboxContainer = document.createElement('div');
+                checkboxContainer.className = 'dont-show-again-container mb-4 flex items-center';
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = 'dontShowAgainCheckbox';
+                checkbox.className = 'h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500';
+                const label = document.createElement('label');
+                label.htmlFor = 'dontShowAgainCheckbox';
+                label.className = 'ml-2 block text-sm text-gray-900';
+                label.textContent = '今後このメッセージを表示しない';
+                checkboxContainer.appendChild(checkbox);
+                checkboxContainer.appendChild(label);
+                confirmModalMessage.parentNode.insertBefore(checkboxContainer, confirmModalMessage.nextSibling);
+            }
 
             const okButton = document.createElement('button');
             okButton.textContent = 'OK';
             okButton.className = 'modal-button bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md';
             okButton.addEventListener('click', () => {
+                if (showDontShowAgain && dontShowAgainCallback) {
+                    const checkbox = document.getElementById('dontShowAgainCheckbox');
+                    if (checkbox && checkbox.checked) {
+                        dontShowAgainCallback();
+                    }
+                }
                 confirmationModal.style.display = 'none';
+                const checkboxContainer = confirmModalMessage.parentNode.querySelector('.dont-show-again-container');
+                if (checkboxContainer) {
+                    checkboxContainer.remove();
+                }
             });
             
             confirmModalButtonContainer.appendChild(okButton);
@@ -431,6 +471,14 @@
                     order: 0 
                 };
                 data.urls.push(newUrl);
+                if (localStorage.getItem('linkKeeperFirstUrlAddedAdviceShown') !== 'true') {
+                    openInfoModal(
+                        '最初のURL登録おめでとうございます！',
+                        'Link Keeperでは、データはお使いのブラウザ内に保存されます。万が一に備え、定期的に「エクスポート(CSV)」機能でデータのバックアップを取ることをお忘れなく。',
+                        true, 
+                        () => { localStorage.setItem('linkKeeperFirstUrlAddedAdviceShown', 'true'); }
+                    );
+                }
             }
             closeUrlModal(); saveAndRender();
         });
@@ -488,7 +536,19 @@
             if (tabName) {
                 if (data.tabs.find(tab => tab.name === tabName)) { openInfoModal('エラー', '同じ名前のワークスペースが既に存在します。'); return; } 
                 const newTab = { id: generateId(), name: tabName }; data.tabs.push(newTab);
-                newTabNameInput.value = ''; currentView = newTab.id; saveAndRender();
+                newTabNameInput.value = ''; currentView = newTab.id; 
+                
+                if (localStorage.getItem('linkKeeperFirstWorkspaceAdviceShown') !== 'true' && data.tabs.length === 1) {
+                    setTimeout(() => {
+                        openInfoModal(
+                            '最初のワークスペース作成おめでとうございます！',
+                            'Link Keeperでは、データはお使いのブラウザ内に保存されます。万が一に備え、定期的に「エクスポート(CSV)」機能でデータのバックアップを取ることをお忘れなく。',
+                            true, 
+                            () => { localStorage.setItem('linkKeeperFirstWorkspaceAdviceShown', 'true'); }
+                        );
+                    }, 100);
+                }
+                saveAndRender();
             } else { openInfoModal('入力エラー', 'ワークスペース名を入力してください。'); } 
         };
         const deleteTab = (tabIdToDelete) => {
@@ -789,6 +849,7 @@
                 linkElement.setAttribute('href', dataUri);
                 linkElement.setAttribute('download', exportFileDefaultName);
                 linkElement.click();
+                openInfoModal('エクスポート完了', `${exportFileDefaultName} がダウンロードされました。\nブラウザのキャッシュクリア等でデータが失われる可能性があることにご注意ください。`);
             } catch (error) { console.error("CSV Export error:", error); openInfoModal('エクスポートエラー', "CSVエクスポート中にエラーが発生しました。"); }
         });
 
@@ -1047,6 +1108,8 @@
             let currentWorkspaceUrlCount = 0;
 
             const noWorkspacesGuideEl = document.getElementById('noWorkspacesGuide');
+            const footerNoteEl = document.getElementById('footerNote');
+
 
             if (currentView === 'all') { 
                 addTabSection.style.display = 'flex'; 
@@ -1054,8 +1117,13 @@
                 if (data.tabs.length === 0) {
                     if (noWorkspacesGuideEl) noWorkspacesGuideEl.classList.remove('hidden');
                     if (emptyMessage) emptyMessage.classList.add('hidden'); 
+                    if (footerNoteEl) footerNoteEl.classList.add('hidden');
                 } else {
                     if (noWorkspacesGuideEl) noWorkspacesGuideEl.classList.add('hidden');
+                    if (footerNoteEl) { 
+                        footerNoteEl.textContent = "データはブラウザに保存されます。定期的なエクスポートをおすすめします。";
+                        footerNoteEl.classList.remove('hidden');
+                    }
                 }
             } else { 
                 addTabSection.style.display = 'none'; 
@@ -1063,6 +1131,10 @@
                 currentWorkspaceUrlCount = data.urls.filter(url => url.tabId === currentView).length;
                 currentTabTitle.textContent = currentTabObj ? `■ ${currentTabObj.name} (${currentWorkspaceUrlCount}件)` : '■ ワークスペースが見つかりません'; 
                 if (noWorkspacesGuideEl) noWorkspacesGuideEl.classList.add('hidden');
+                if (footerNoteEl) { 
+                     footerNoteEl.textContent = "データはブラウザに保存されます。定期的なエクスポートをおすすめします。";
+                     footerNoteEl.classList.remove('hidden');
+                }
             }
             renderUrls();
         };
